@@ -1,0 +1,551 @@
+pipeline {
+
+    agent { label 'master' }
+    options {
+        ansiColor('xterm')
+    }
+
+    environment {
+        token = credentials('sonarqube-scanner')
+        scannerHome = tool('sonar-scanner')
+    }
+
+    stages {
+        stage('ms-analytics'){
+            steps {
+                dir ('ms-analytics') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Analytics.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh '''
+                            cd recvuereport
+                            mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-analytics -Dsonar.projectKey=ms-analytics -DskipTests=true
+                        '''
+                    }
+                }
+            }
+        }
+        stage('ms-bulk'){
+            steps {
+                dir ('ms-bulk') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Bulk.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh 'mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-bulk -Dsonar.projectKey=ms-bulk -DskipTests=true'
+                    }
+                }
+            }
+        }
+        stage('ms-billing'){
+            steps {
+                dir ('ms-billing') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Billing.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh 'mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-billing -Dsonar.projectKey=ms-billing -DskipTests=true'
+                    }
+                }
+            }
+        }
+        // // stage('foundations'){
+        // //     steps {
+        // //         dir ('foundations') {
+        // //             git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Foundation.git'
+        // //             withSonarQubeEnv('sonar-8') { 
+        // //               sh '''
+
+        // //                 '''
+        // //             //     sh '''
+        // //             //         cd bestpractices/events
+        // //             //         mvn clean package sonar:sonar -D"sonar.projectName=foundation-events" -D"sonar.projectKey=foundation-events"
+        // //             //     '''
+        // //             //     sh '''
+        // //             //         cd bestpractices/ms-apiref
+        // //             //         mvn clean package sonar:sonar -D"sonar.projectName=foundation-ms-apiref" -D"sonar.projectKey=foundation-ms-apiref"
+        // //             //     '''
+        // //             //     sh '${scannerHome}/bin/sonar-scanner -D"sonar.projectKey=foundation-ui-apiref" -D"sonar.sources=bestpractices/ui-apiref" -D"sonar.host.url=http://localhost:9000" -D"sonar.login=$token"'
+        // //             }
+        // //         }
+        // //     }
+        // // }
+        stage('ms-contracts'){
+            steps {
+                dir ('ms-contracts') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Contracts.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh '''
+                            #cd web/ui/ADEA
+                            java -version
+                            mvn --version
+                            mkdir -p ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/Release_0.1/error-message-util/error-message-util-0.1.8-SNAPSHOT.jar ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                            mkdir -p ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/latest_0.1/ms_common/emf-common-0.1.8-SNAPSHOT.jar ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT/
+                            mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-contracts -Dsonar.projectKey=ms-contracts -DskipTests=true
+                            #mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-contracts -Dsonar.projectKey=ms-contracts -DskipTests=true
+                            #mvn clean package -U sonar:sonar -Dsonar.projectName=ms-contracts -Dsonar.projectKey=ms-contracts -DskipTests=true
+                            #mvn clean install package -DskipTests=true -U
+                          
+                        '''
+                    }
+                }
+            }
+        }
+        stage('ms-integrations'){
+            steps {
+                dir ('ms-integrations') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Integrations.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh '''
+                          mkdir -p ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                          /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/Release_0.1/error-message-util/error-message-util-0.1.8-SNAPSHOT.jar ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                          mkdir -p ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+                          /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/latest_0.1/ms_common/emf-common-0.1.8-SNAPSHOT.jar ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT/
+                          #mvn clean package -DskipTests=true sonar:sonar -D"sonar.projectName=ms-integrations" -D"sonar.projectKey=ms-integrations"
+                          mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-integrations -Dsonar.projectKey=ms-integrations -DskipTests=true
+                        '''
+                    }
+                }
+            }
+        }
+        stage('ms-revenue'){
+            steps {
+                dir ('ms-revenue') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Revenue.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh '''
+                          mkdir -p ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                          /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/Release_0.1/error-message-util/error-message-util-0.1.8-SNAPSHOT.jar ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                          mkdir -p ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+                          /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/latest_0.1/ms_common/emf-common-0.1.8-SNAPSHOT.jar ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT/
+                          mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-revenue -Dsonar.projectKey=ms-revenue -DskipTests=true
+                        '''
+                    }
+                }
+            }
+        }
+        stage('ms-security'){
+            steps {
+                dir ('ms-security') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Security.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh '''
+                            cd recvueoktatoken
+                            mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-security -Dsonar.projectKey=ms-security -DskipTests=true
+                          # mvn clean package sonar:sonar -D"sonar.projectName=ms-security" -D"sonar.projectKey=ms-security"
+                        '''
+                    }
+                }
+            }
+        }
+        stage('ms-settings'){
+            steps {
+                dir ('ms-settings') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Settings.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh '''
+                          mkdir -p ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                          /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/Release_0.1/error-message-util/error-message-util-0.1.8-SNAPSHOT.jar ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                          mkdir -p ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+                          /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/latest_0.1/ms_common/emf-common-0.1.8-SNAPSHOT.jar ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT/
+                          mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-settings -Dsonar.projectKey=ms-settings -DskipTests=true
+                          # mvn clean package -DskipTests=true sonar:sonar -D"sonar.projectName=ms-settings" -D"sonar.projectKey=ms-settings"
+                        '''
+                    }
+                }
+            }
+        }
+        stage('ms-usages'){
+            steps {
+                dir ('ms-usages') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Usages.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh 'mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-usages -Dsonar.projectKey=ms-usages -DskipTests=true'
+                    }
+                }
+            }
+        }
+        stage('ms-vendor'){
+            steps {
+                dir ('ms-vendor') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Vendor.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh 'mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-vendor -Dsonar.projectKey=ms-vendor -DskipTests=true'
+                    }
+                }
+            }
+        }
+        stage('security') {
+            steps {
+                dir('security') {
+                    // Checkout RECVUE_Contracts
+                    dir('Contracts') {
+                        git branch: 'deviris',
+                            credentialsId: 'Vault-RECVUE-GITHUB',
+                            poll: false,
+                            changelog: false,
+                            url: 'git@github.com:InfovityInc/RECVUE_Contracts.git'
+                    }
+                    // Checkout RECVUE_Security
+                    dir('Security') {
+                        git branch: 'deviris',
+                            credentialsId: 'Vault-RECVUE-GITHUB',
+                            poll: false,
+                            changelog: false,
+                            url: 'git@github.com:InfovityInc/RECVUE_Security.git'
+                    }
+        
+                    withSonarQubeEnv('sonar-8') {
+                        // Load Maven cache from S3
+                        sh '/usr/local/bin/aws s3 cp s3://recvue-build/.m2/ ./.m2/ --recursive'
+        
+                        // Move the recvue-security module to where ADEA expects it
+                        sh '''
+                            mkdir -p Contracts/web/ui/ADEA
+                            cp -r Security/web/service/recvue-security Contracts/web/ui/ADEA/
+                        '''
+        
+                        // Build and scan
+                        sh '''
+                            docker run --rm \
+                            -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                            -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                            -v ${WORKSPACE}/security:/app \
+                            -w /app \
+                            maven:3.6-jdk-8 \
+                            /bin/bash -c "rm -rf ~/.m2 && \
+                            mv /app/.m2 ~/ && \
+                            chown root:root -R ~/.m2/ && \
+                            cd ./Contracts/web/ui/ADEA && \
+                            mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                -Dsonar.projectName=security \
+                                -Dsonar.projectKey=security \
+                                -DskipTests=true \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_AUTH_TOKEN}"
+                        '''
+                    }
+                }
+            }
+        }
+        // stage('security') {
+        //     steps {
+        //         dir('security') {
+        //             // Checkout RECVUE_Contracts
+        //             dir('Contracts') {
+        //                 git branch: 'deviris',
+        //                     credentialsId: 'Vault-RECVUE-GITHUB',
+        //                     poll: false,
+        //                     changelog: false,
+        //                     url: 'git@github.com:InfovityInc/RECVUE_Contracts.git'
+        //             }
+        
+        //             // Checkout RECVUE_Security
+        //             dir('Security') {
+        //                 git branch: 'deviris',
+        //                     credentialsId: 'Vault-RECVUE-GITHUB',
+        //                     poll: false,
+        //                     changelog: false,
+        //                     url: 'git@github.com:InfovityInc/RECVUE_Security.git'
+        //             }
+        
+        //             withSonarQubeEnv('sonar-8') {
+        //                 // Load Maven cache from S3
+        //                 sh '/usr/local/bin/aws s3 cp s3://recvue-build/.m2/ ./.m2/ --recursive'
+        
+        //                 // Prepare the directory and clean up safely using Docker
+        //                 sh '''
+        //                     mkdir -p Contracts/web/ui/ADEA
+        
+        //                     docker run --rm \
+        //                         -v $(pwd):/app \
+        //                         -w /app \
+        //                         alpine \
+        //                         sh -c "rm -rf /app/Contracts/web/ui/ADEA/recvue-security"
+        
+        //                     cp -r Security/web/service/recvue-security Contracts/web/ui/ADEA/
+        //                 '''
+        
+        //                 // Fix file ownership before Maven build to avoid permission issues
+        //                 sh '''
+        //                     docker run --rm \
+        //                         --user 0:0 \
+        //                         -v $(pwd):/app \
+        //                         -w /app \
+        //                         alpine \
+        //                         sh -c "chown -R $(id -u):$(id -g) /app"
+        //                 '''
+        
+        //                 // Build and run SonarQube scan with Maven
+        //                 sh '''
+        //                     docker run --rm \
+        //                         --user $(id -u):$(id -g) \
+        //                         -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+        //                         -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+        //                         -v ${WORKSPACE}/security:/app \
+        //                         -v ${WORKSPACE}/security/.m2:/root/.m2 \
+        //                         -w /app/Contracts/web/ui/ADEA \
+        //                         maven:3.6-jdk-8 \
+        //                         mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+        //                             -Dsonar.projectName=security \
+        //                             -Dsonar.projectKey=security \
+        //                             -DskipTests=true \
+        //                             -Dsonar.host.url=${SONAR_HOST_URL} \
+        //                             -Dsonar.login=${SONAR_AUTH_TOKEN}
+        //                 '''
+        //             }
+        //         }
+        //     }
+        // }
+        // stage('security') {
+        //     steps {
+        //         dir('security') {
+        //             // Checkout RECVUE_Contracts
+        //             dir('Contracts') {
+        //                 git branch: 'deviris',
+        //                     credentialsId: 'Vault-RECVUE-GITHUB',
+        //                     poll: false,
+        //                     changelog: false,
+        //                     url: 'git@github.com:InfovityInc/RECVUE_Contracts.git'
+        //             }
+        //             // Checkout RECVUE_Security
+        //             dir('Security') {
+        //                 git branch: 'deviris',
+        //                     credentialsId: 'Vault-RECVUE-GITHUB',
+        //                     poll: false,
+        //                     changelog: false,
+        //                     url: 'git@github.com:InfovityInc/RECVUE_Security.git'
+        //             }
+        
+        //             withSonarQubeEnv('sonar-8') {
+        //                 // Load Maven cache from S3
+        //                 sh '/usr/local/bin/aws s3 cp s3://recvue-build/.m2/ ./.m2/ --recursive'
+        
+        //                 // Move the recvue-security module to where ADEA expects it
+        //                   sh '''
+        //                       mkdir -p Contracts/web/ui/ADEA
+        //                       rm -rf Contracts/web/ui/ADEA/recvue-security
+        //                       cp -r Security/web/service/recvue-security Contracts/web/ui/ADEA/
+        //                       '''
+        //                 // Build and scan
+        //                 sh '''
+        //                     docker run --rm \
+        //                     -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+        //                     -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+        //                     -v ${WORKSPACE}/security:/app \
+        //                     -w /app \
+        //                     maven:3.6-jdk-8 \
+        //                     /bin/bash -c "rm -rf ~/.m2 && \
+        //                     mv /app/.m2 ~/ && \
+        //                     chown root:root -R ~/.m2/ && \
+        //                     cd ./Contracts/web/ui/ADEA && \
+        //                     mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+        //                         -Dsonar.projectName=security \
+        //                         -Dsonar.projectKey=security \
+        //                         -DskipTests=true \
+        //                         -Dsonar.host.url=${SONAR_HOST_URL} \
+        //                         -Dsonar.login=${SONAR_AUTH_TOKEN}"
+        //                 '''
+        //             }
+        //         }
+        //     }
+        // }
+        stage('authorizer'){
+            steps {
+                dir ('authorizer') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Authorizer.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh '''
+                            cd apiauthorizer
+                            mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=authorizer -Dsonar.projectKey=authorizer -DskipTests=true
+                        '''
+                    }
+                }
+            }
+                }
+        stage('foundation'){
+            steps {
+                dir ('foundation') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Foundation.git'
+                    withSonarQubeEnv('sonar-8') { 
+                        sh '''
+                              ls -al
+                              cd emf-common
+                              mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-common -Dsonar.projectKey=ms-common
+                              
+                              docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/foundation:/app \
+                              -w /app \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/bash -c "cd emf-common-v1 && \
+                              mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-common17 -Dsonar.projectKey=ms-common17 -DskipTests=true -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}"
+                              
+                              docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/foundation:/tmp \
+                              -w /tmp \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/bash -c "mkdir -p ~/.m2/repository/com/recvue/emf/emf-common/0.1.17-SNAPSHOT/ && \
+                              cp -r /tmp/emf-common-v1/target/emf-common-0.1.* ~/.m2/repository/com/recvue/emf/emf-common/0.1.17-SNAPSHOT/ && \
+                              curl -o lombok-1.18.26.jar https://projectlombok.org/downloads/lombok-1.18.26.jar && \
+                              mkdir -p ~/.m2/repository/org/projectlombok/lombok/1.18.26 && \
+                              mv lombok-1.18.26.jar ~/.m2/repository/org/projectlombok/lombok/1.18.26 && \
+                              cd /tmp/emf-notification && \
+                              mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=emf-notification -Dsonar.projectKey=emf-notification -DskipTests=true -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}"
+                              
+                              docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/foundation:/tmp \
+                              -w /tmp \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/bash -c "mkdir -p ~/.m2/repository/com/recvue/emf/emf-common/0.1.17-SNAPSHOT/ && \
+                              cp -r /tmp/emf-common-v1/target/emf-common-0.1.* ~/.m2/repository/com/recvue/emf/emf-common/0.1.17-SNAPSHOT/ && \
+                              curl -o lombok-1.18.26.jar https://projectlombok.org/downloads/lombok-1.18.26.jar && \
+                              mkdir -p ~/.m2/repository/org/projectlombok/lombok/1.18.26 && \
+                              mv lombok-1.18.26.jar ~/.m2/repository/org/projectlombok/lombok/1.18.26 && \
+                              cd /tmp/emf-event-service && \
+                              mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=emf-event-service -Dsonar.projectKey=emf-event-service -DskipTests=true -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}"
+                              
+                              cd ../error-message-util
+                              mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=error-message-util -Dsonar.projectKey=error-message-util
+                        '''
+                        // sh '''
+                        //     cd bestpractices/ms-apiref
+                        //     mvn clean package org.sonarsource.scanner.maven:sonar-mn-plugin:3.9.1.2184:sonar -Dsonar.projectName=foundation-ms-apiref -Dsonar.projectKey=foundation-ms-apiref -DskipTests=true
+                        //     # mvn clean package sonar:sonar -D"sonar.projectName=foundation-ms-apiref" -D"sonar.projectKey=foundation-ms-apiref"
+                        // '''
+                        // sh '${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=foundation-ui-apiref -Dsonar.sources=bestpractices/ui-apiref -Dsonar.host.url=http://localhost:9000 -Dsonar.login=$token'
+                    }
+                }
+            }
+        }
+        // stage('contracts') {
+        //     steps {
+        //         // Clean up previous workspace to avoid permission issues
+        //         cleanWs(deleteDirs: true)
+        
+        //         // Checkout RECVUE_Contracts repo
+        //         dir('contracts') {
+        //             git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Contracts.git'
+        //         }
+        
+        //         // Checkout RECVUE_Security repo
+        //         dir('security') {
+        //             git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Security.git'
+        //         }
+        
+        //         // Ensure Jenkins has permissions to clean up workspace later
+        //         sh 'chmod -R u+rwX .'
+        
+        //         // SonarQube analysis with Maven and custom settings.xml
+        //         withSonarQubeEnv('sonar-8') {
+        //             sh """
+        //                 cp -r security/Security/web/service contracts/web/ui/ADEA/recvue-security
+        
+        //                 cd contracts/web/ui/ADEA
+        //                 mvn -s ${WORKSPACE}/jenkins-settings.xml \
+        //                     clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+        //                     -Dsonar.projectName=security \
+        //                     -Dsonar.projectKey=security \
+        //                     -DskipTests=true \
+        //                     -Dsonar.host.url=${SONAR_HOST_URL} \
+        //                     -Dsonar.login=${SONAR_AUTH_TOKEN}
+        //             """
+        
+        //             // PLSQL SonarQube analysis
+        //             sh """
+        //                 ${scannerHome}/bin/sonar-scanner \
+        //                     -Dsonar.projectKey=contracts-plsql \
+        //                     -Dsonar.sources=contracts/database \
+        //                     -Dsonar.host.url=${SONAR_HOST_URL} \
+        //                     -Dsonar.login=${SONAR_AUTH_TOKEN}
+        //             """
+        //         }
+        //     }
+        // }
+        stage('bill') {
+            steps {
+                dir('bill') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Bill.git'
+                    withSonarQubeEnv('sonar-8') {
+                        sh '''
+                            ls -al
+        
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/bill:/usr/src \
+                              -w /usr/src \
+                              sonarsource/sonar-scanner-cli:4.7 \
+                              -Dsonar.projectKey=plsql-bill \
+                              -Dsonar.projectName=plsql-bill \
+                              -Dsonar.sources=database \
+                              -Dsonar.language=plsql \
+                              -Dsonar.host.url=${SONAR_HOST_URL} \
+                              -Dsonar.login=${SONAR_AUTH_TOKEN}
+                        '''
+                    }
+                }
+            }
+        }
+        stage('common') {
+            steps {
+                dir('common') {
+                    git branch: 'develop', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Common.git'
+        
+                    withSonarQubeEnv('sonar-8') {
+                        sh '''
+                            echo "Running SonarQube Maven scan for Java code in kafkapublisher module..."
+        
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/common:/app \
+                              -w /app/web/service/kafkapublisher \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/sh -c "mvn clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                -Dsonar.projectName=java-common-kafkapublisher \
+                                -Dsonar.projectKey=java-common-kafkapublisher \
+                                -DskipTests=true \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_AUTH_TOKEN}"
+                        '''
+                    }
+                }
+            }
+        }
+        stage('changelogs') {
+            steps {
+                dir('changelogs') {
+                    git branch: 'R_21.2', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_DB_ChangeLog.git'
+        
+                    withSonarQubeEnv('sonar-8') {
+                        sh '''
+                            echo "Running SonarQube scan for DB changelogs without Maven..."
+        
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/changelogs:/usr/src \
+                              -w /usr/src \
+                              sonarsource/sonar-scanner-cli:4.7 \
+                              -Dsonar.projectKey=plsql-changelogs \
+                              -Dsonar.projectName=plsql-changelogs \
+                              -Dsonar.sources=. \
+                              -Dsonar.inclusions=**/*.sql \
+                              -Dsonar.language=plsql \
+                              -Dsonar.host.url=${SONAR_HOST_URL} \
+                              -Dsonar.login=${SONAR_AUTH_TOKEN}
+                        '''
+                    }
+                }
+            }
+        }
+    //     post {
+    //         cleanup {
+    //             cleanWs()
+    //         }
+    // }
+}
+}

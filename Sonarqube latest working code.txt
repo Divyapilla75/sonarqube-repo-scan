@@ -1,0 +1,750 @@
+pipeline {
+
+    agent { label 'master' }
+    options {
+        ansiColor('xterm')
+    }
+
+    environment {
+        token = credentials('sonarqube-scanner')
+        scannerHome = tool('sonar-scanner')
+    }
+
+    stages {
+        stage('ms-analytics') {
+            steps {
+                dir('ms-analytics') {
+                    git branch: 'master',
+                        credentialsId: 'RECVUE-GITHUB',
+                        poll: false,
+                        changelog: false,
+                        url: 'git@github.com:InfovityInc/RECVUE_MS_Analytics.git'
+                    withSonarQubeEnv('sonar-25') {
+                        sh """
+                            mkdir -p ${WORKSPACE}/ms-analytics/dummy-bin
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/ms-analytics:/usr/src \
+                              -w /usr/src \
+                              sonarsource/sonar-scanner-cli:5.0 \
+                              sonar-scanner \
+                                -Dsonar.projectKey=ms-analytics \
+                                -Dsonar.projectName=ms-analytics \
+                                -Dsonar.sources=. \
+                                -Dsonar.java.binaries=dummy-bin \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN}
+                        """
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-analytics') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('ms-bulk') {
+            steps {
+                dir('ms-bulk') {
+                    git branch: 'master',
+                        credentialsId: 'RECVUE-GITHUB',
+                        poll: false,
+                        changelog: false,
+                        url: 'git@github.com:InfovityInc/RECVUE_MS_Bulk.git'
+                    withSonarQubeEnv('sonar-25') {
+                        sh """
+                            mkdir -p ${WORKSPACE}/ms-bulk/dummy-bin
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/ms-bulk:/usr/src \
+                              -w /usr/src \
+                              sonarsource/sonar-scanner-cli:5.0 \
+                              sonar-scanner \
+                                -Dsonar.projectKey=ms-bulk \
+                                -Dsonar.projectName=ms-bulk \
+                                -Dsonar.sources=. \
+                                -Dsonar.java.binaries=dummy-bin \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN}
+                        """
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-bulk') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('ms-billing') {
+            steps {
+                dir('ms-billing') {
+                    git branch: 'master',
+                        credentialsId: 'Vault-RECVUE-GITHUB',
+                        poll: false,
+                        changelog: false,
+                        url: 'git@github.com:InfovityInc/RECVUE_MS_Billing.git'
+                    withSonarQubeEnv('sonar-25') {
+                        sh """
+                            mkdir -p ${WORKSPACE}/ms-billing/dummy-bin
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/ms-billing:/usr/src \
+                              -w /usr/src \
+                              sonarsource/sonar-scanner-cli:5.0 \
+                              sonar-scanner \
+                                -Dsonar.projectKey=ms-billing \
+                                -Dsonar.projectName=ms-billing \
+                                -Dsonar.sources=. \
+                                -Dsonar.java.binaries=dummy-bin \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN}
+                        """
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-billing') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('ms-contracts') {
+            steps {
+                dir('ms-contracts') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Contracts.git'
+                    withSonarQubeEnv('sonar-25') {
+                        sh """
+                            java -version
+                            mvn --version
+        
+                            # Fetching required JARs from S3
+                            mkdir -p ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/Release_0.1/error-message-util/error-message-util-0.1.8-SNAPSHOT.jar ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+        
+                            mkdir -p ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/latest_0.1/ms_common/emf-common-0.1.8-SNAPSHOT.jar ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+        
+                            # Create dummy binaries directory to satisfy sonar.java.binaries
+                            mkdir -p dummy-bin
+        
+                            # Run SonarQube analysis (only scan, no build)
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/ms-contracts:/app \
+                              -w /app \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/sh -c "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                -Dsonar.projectKey=ms-contracts \
+                                -Dsonar.projectName=ms-contracts \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN} \
+                                -Dsonar.sources=src/main/java \
+                                -Dsonar.tests=src/test/java \
+                                -Dsonar.java.binaries=dummy-bin"
+                        """
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-contracts') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        // stage('ms-integrations') {
+        //     steps {
+        //         dir('ms-integrations') {
+        //             git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Integrations.git'
+        //             withSonarQubeEnv('sonar-25') {
+        //                 sh """
+        //                     # Fetching required JARs from S3
+        //                     mkdir -p ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+        //                     /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/Release_0.1/error-message-util/error-message-util-0.1.8-SNAPSHOT.jar ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+        
+        //                     mkdir -p ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+        //                     /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/latest_0.1/ms_common/emf-common-0.1.8-SNAPSHOT.jar ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+        
+        //                     # Create dummy binaries directory
+        //                     mkdir -p dummy-bin
+        
+        //                     # Run SonarQube scan (no build)
+        //                     docker run --rm \
+        //                       -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+        //                       -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+        //                       -v ${WORKSPACE}/ms-integrations:/app \
+        //                       -w /app \
+        //                       maven:3.9.6-eclipse-temurin-17-alpine \
+        //                       /bin/sh -c "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+        //                         -Dsonar.projectKey=ms-integration \
+        //                         -Dsonar.projectName=ms-integrations \
+        //                         -Dsonar.host.url=${SONAR_HOST_URL} \
+        //                         -Dsonar.token=${SONAR_AUTH_TOKEN} \
+        //                         -Dsonar.sources=src/main/java \
+        //                         -Dsonar.tests=src/test/java \
+        //                         -Dsonar.java.binaries=dummy-bin"
+        //                 """
+        //             }
+        //         }
+        //     }
+        // }
+        stage('ms-integrations') {
+            steps {
+                dir('ms-integrations') {
+                    git branch: 'master',
+                        credentialsId: 'Vault-RECVUE-GITHUB',
+                        poll: false,
+                        changelog: false,
+                        url: 'git@github.com:InfovityInc/RECVUE_MS_Integrations.git'
+                    withSonarQubeEnv('sonar-25') {
+                        sh """
+                            # Fetch required JARs from S3
+                            mkdir -p ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/Release_0.1/error-message-util/error-message-util-0.1.8-SNAPSHOT.jar ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT/
+        
+                            mkdir -p ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/msdeviris/ms_common/emf-common-0.1.8-SNAPSHOT.jar ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT/
+        
+                            # Create dummy binaries dir
+                            mkdir -p dummy-bin
+        
+                            # Run sonar scanner inside Docker
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/ms-integrations:/usr/src \
+                              -w /usr/src \
+                              sonarsource/sonar-scanner-cli:5.0 \
+                              sonar-scanner \
+                                -Dsonar.projectKey=ms-integration \
+                                -Dsonar.projectName=ms-integrations \
+                                -Dsonar.sources=src/main/java \
+                                -Dsonar.tests=src/test/java \
+                                -Dsonar.java.binaries=dummy-bin \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN}
+                        """
+                    }
+                }
+            }
+        }
+        
+        // stage('quality-gate-ms-integrations') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('ms-revenue') {
+            steps {
+                dir('ms-revenue') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Revenue.git'
+                    withSonarQubeEnv('sonar-25') { 
+                        sh """
+                            # Fetch dependencies from S3
+                            mkdir -p ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/Release_0.1/error-message-util/error-message-util-0.1.8-SNAPSHOT.jar ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+        
+                            mkdir -p ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/latest_0.1/ms_common/emf-common-0.1.8-SNAPSHOT.jar ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT/
+        
+                            # Create dummy binaries folder
+                            mkdir -p dummy-bin
+        
+                            # Run SonarQube scan (no build)
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/ms-revenue:/app \
+                              -v ${WORKSPACE}/libs:/app/libs \
+                              -w /app \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/sh -c "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                -Dmaven.repo.local=/app/.m2 \
+                                -DadditionalClasspath=/app/libs/* \
+                                -Dmaven.compiler.compilerArgs='-cp /app/libs/*' \
+                                -Dsonar.projectKey=ms-revenue \
+                                -Dsonar.projectName=ms-revenue \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN} \
+                                -Dsonar.sources=src/main/java \
+                                -Dsonar.java.binaries=dummy-bin"
+                        """
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-revenue') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('ms-security') {
+            steps {
+                dir('ms-security') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Security.git'
+                    withSonarQubeEnv('sonar-25') { 
+                        sh """
+                            cd recvueoktatoken
+        
+                            # Create dummy binaries folder (required for Java scanner)
+                            mkdir -p dummy-bin
+        
+                            # Run SonarQube scan only
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v \$(pwd):/app \
+                              -w /app \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/sh -c "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                -Dsonar.projectKey=ms-security \
+                                -Dsonar.projectName=ms-security \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN} \
+                                -Dsonar.sources=src/main/java \
+                                -Dsonar.java.binaries=dummy-bin"
+                        """
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-security') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('ms-settings') {
+            steps {
+                dir('ms-settings') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Settings.git'
+                    withSonarQubeEnv('sonar-25') {
+                        sh """
+                            # Fetch required JARs from S3
+                            mkdir -p ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/Release_0.1/error-message-util/error-message-util-0.1.8-SNAPSHOT.jar ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+        
+                            mkdir -p ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/latest_0.1/ms_common/emf-common-0.1.8-SNAPSHOT.jar ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+        
+                            # Create dummy binary folder on host (so we can mount it)
+                            mkdir -p dummy-bin
+        
+                            # Run SonarQube scan
+                            docker run --rm \
+                                -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                                -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                                -v \$(pwd):/app \
+                                -v \$(pwd)/dummy-bin:/app/dummy-bin \
+                                -w /app \
+                                maven:3.9.6-eclipse-temurin-17-alpine \
+                                /bin/sh -c "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                  -Dsonar.projectKey=ms-settings \
+                                  -Dsonar.projectName=ms-settings \
+                                  -Dsonar.host.url=${SONAR_HOST_URL} \
+                                  -Dsonar.token=${SONAR_AUTH_TOKEN} \
+                                  -Dsonar.sources=src/main/java \
+                                  -Dsonar.java.binaries=dummy-bin"
+                        """
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-settings') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('ms-usages') {
+            steps {
+                dir('ms-usages') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Usages.git'
+                    withSonarQubeEnv('sonar-25') {
+                        sh '''
+                            # Create dummy binaries directory to satisfy sonar.java.binaries
+                            mkdir -p dummy-bin
+        
+                            # Run SonarQube analysis from the root where pom.xml exists
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v $(pwd):/app \
+                              -w /app \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/sh -c "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                -Dsonar.projectKey=ms-usages \
+                                -Dsonar.projectName=ms-usages \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN} \
+                                -Dsonar.sources=src/main/java \
+                                -Dsonar.java.binaries=dummy-bin"
+                        '''
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-usages') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        // stage('ms-vendor') {
+        //     steps {
+        //         dir('ms-vendor') {
+        //             git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Vendor.git'
+        //             withSonarQubeEnv('sonar-25') {
+        //                 sh '''
+        //                     # Create dummy binaries directory to satisfy sonar.java.binaries
+        //                     mkdir -p dummy-bin
+        
+        //                     # Run SonarQube analysis from the root where pom.xml exists
+        //                     docker run --rm \
+        //                       -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+        //                       -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+        //                       -v $(pwd):/app \
+        //                       -w /app \
+        //                       maven:3.9.6-eclipse-temurin-17-alpine \
+        //                       /bin/sh -c "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+        //                         -Dsonar.projectKey=ms-vendor \
+        //                         -Dsonar.projectName=ms-vendor \
+        //                         -Dsonar.host.url=${SONAR_HOST_URL} \
+        //                         -Dsonar.token=${SONAR_AUTH_TOKEN} \
+        //                         -Dsonar.sources=src/main/java \
+        //                         -Dsonar.java.binaries=dummy-bin"
+        //                 '''
+        //             }
+        //         }
+        //     }
+        // }
+        stage('ms-vendor') {
+            steps {
+                dir('ms-vendor') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_MS_Vendor.git'
+                    withSonarQubeEnv('sonar-25') {
+                        sh '''
+                            mkdir -p ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/msdeviris/ms_common/emf-common-0.1.8-SNAPSHOT.jar ./repo/com/recvue/emf/emf-common/0.1.8-SNAPSHOT/
+                            
+                            mkdir -p ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                            /usr/local/bin/aws s3 cp s3://recvue-ops/Kubernetes/Release_0.1/error-message-util/error-message-util-0.1.8-SNAPSHOT.jar ./repo/com/recvue/error/error-message-util/0.1.8-SNAPSHOT
+                                
+                            # Create dummy binaries directory to satisfy sonar.java.binaries
+                            mkdir -p dummy-bin
+        
+                            # Run SonarQube analysis from the root where pom.xml exists
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v $(pwd):/app \
+                              -w /app \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/sh -c "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                -Dsonar.projectKey=ms-vendor \
+                                -Dsonar.projectName=ms-vendor \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN} \
+                                -Dsonar.sources=src/main/java \
+                                -Dsonar.java.binaries=dummy-bin"
+                        '''
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-vendor') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('security') {
+            steps {
+                dir('security') {
+                    // Checkout RECVUE_Contracts
+                    dir('Contracts') {
+                        git branch: 'deviris',
+                            credentialsId: 'Vault-RECVUE-GITHUB',
+                            poll: false,
+                            changelog: false,
+                            url: 'git@github.com:InfovityInc/RECVUE_Contracts.git'
+                    }
+        
+                    // Checkout RECVUE_Security
+                    dir('Security') {
+                        git branch: 'deviris',
+                            credentialsId: 'Vault-RECVUE-GITHUB',
+                            poll: false,
+                            changelog: false,
+                            url: 'git@github.com:InfovityInc/RECVUE_Security.git'
+                    }
+        
+                    withSonarQubeEnv('sonar-25') {
+                        // Organize directory structure as expected
+                        sh '''
+                            mkdir -p Contracts/web/ui/ADEA
+                            cp -r Security/web/service/recvue-security Contracts/web/ui/ADEA/
+                        '''
+        
+                        // Run Sonar Scan without Maven build
+                        sh '''
+                            rm -f Contracts/web/ui/ADEA/sonar-project.properties
+                        
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/security:/usr/src \
+                              -w /usr/src/Contracts/web/ui/ADEA \
+                              divyapilla75/sonar-scanner-java17:latest \
+                              -X \
+                                -Dsonar.projectKey=security \
+                                -Dsonar.projectName=security \
+                                -Dsonar.sources=. \
+                                -Dsonar.exclusions=**/*.java \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_AUTH_TOKEN}
+                        '''
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-recvue-security') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('authorizer') {
+            steps {
+                dir('authorizer') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Authorizer.git'
+                    withSonarQubeEnv('sonar-25') {
+                        sh '''
+                            cd apiauthorizer
+                            mkdir -p dummy-bin  # for sonar.java.binaries
+        
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v $(pwd):/app \
+                              -w /app \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/sh -c "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                -Dsonar.projectKey=authorizer \
+                                -Dsonar.projectName=authorizer \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN} \
+                                -Dsonar.sources=src/main/java \
+                                -Dsonar.tests=src/test/java \
+                                -Dsonar.java.binaries=dummy-bin"
+                        '''
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-authorizer') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('foundation'){
+            steps {
+                dir ('foundation') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Foundation.git'
+                    withSonarQubeEnv('sonar-25') { 
+                        sh '''
+                            ls -al
+        
+                            # emf-common-v1
+                            docker run --rm \
+                            -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                            -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                            -v ${WORKSPACE}/foundation:/app \
+                            -w /app \
+                            maven:3.9.6-eclipse-temurin-17-alpine \
+                            /bin/bash -c "cd emf-common-v1 && \
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=ms-common17 -Dsonar.projectKey=ms-common17 -DskipTests=true -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}"
+        
+                            # Shared dependencies setup for notification & event-service
+                            docker run --rm \
+                            -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                            -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                            -v ${WORKSPACE}/foundation:/tmp \
+                            -w /tmp \
+                            maven:3.9.6-eclipse-temurin-17-alpine \
+                            /bin/bash -c "mkdir -p ~/.m2/repository/com/recvue/emf/emf-common/0.1.17-SNAPSHOT/ && \
+                            cp -r /tmp/emf-common-v1/target/emf-common-0.1.* ~/.m2/repository/com/recvue/emf/emf-common/0.1.17-SNAPSHOT/ && \
+                            curl -o lombok-1.18.26.jar https://projectlombok.org/downloads/lombok-1.18.26.jar && \
+                            mkdir -p ~/.m2/repository/org/projectlombok/lombok/1.18.26 && \
+                            mv lombok-1.18.26.jar ~/.m2/repository/org/projectlombok/lombok/1.18.26 && \
+                            cd /tmp/emf-notification && \
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=emf-notification -Dsonar.projectKey=emf-notification -DskipTests=true -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}"
+        
+                            docker run --rm \
+                            -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                            -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                            -v ${WORKSPACE}/foundation:/tmp \
+                            -w /tmp \
+                            maven:3.9.6-eclipse-temurin-17-alpine \
+                            /bin/bash -c "mkdir -p ~/.m2/repository/com/recvue/emf/emf-common/0.1.17-SNAPSHOT/ && \
+                            cp -r /tmp/emf-common-v1/target/emf-common-0.1.* ~/.m2/repository/com/recvue/emf/emf-common/0.1.17-SNAPSHOT/ && \
+                            curl -o lombok-1.18.26.jar https://projectlombok.org/downloads/lombok-1.18.26.jar && \
+                            mkdir -p ~/.m2/repository/org/projectlombok/lombok/1.18.26 && \
+                            mv lombok-1.18.26.jar ~/.m2/repository/org/projectlombok/lombok/1.18.26 && \
+                            cd /tmp/emf-event-service && \
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.projectName=emf-event-service -Dsonar.projectKey=emf-event-service -DskipTests=true -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}"
+        
+                            # error-message-util
+                            docker run --rm \
+                            -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                            -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                            -v ${WORKSPACE}/foundation:/tmp \
+                            -w /tmp \
+                            maven:3.9.6-eclipse-temurin-17-alpine \
+                            /bin/bash -c "cd error-message-util && \
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                            -Dsonar.projectName=error-message-util \
+                            -Dsonar.projectKey=error-message-util \
+                            -DskipTests=true \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.login=${SONAR_AUTH_TOKEN}"
+        
+                            # NEW MODULES ----------------------------
+        
+                            # emf-common (legacy version)
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/foundation:/app \
+                              -w /app/emf-common \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/sh -c "mvn clean verify -DskipTests && \
+                              mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                -Dsonar.projectName=emf-common \
+                                -Dsonar.projectKey=emf-common \
+                                -DskipTests=true \
+                                -Dsonar.java.binaries=target \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN}"
+        
+                            # emf-topic-routing
+                            docker run --rm -e SONAR_HOST_URL=${SONAR_HOST_URL} -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                            -v ${WORKSPACE}/foundation:/app \
+                            -w /app/emf-topic-routing \
+                            maven:3.9.6-eclipse-temurin-17-alpine \
+                            /bin/bash -c "mvn clean verify -DskipTests && \
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                            -Dsonar.projectName=emf-topic-routing \
+                            -Dsonar.projectKey=emf-topic-routing \
+                            -DskipTests=true -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}"
+                        '''
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-foundation') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('bill') {
+            steps {
+                dir('bill') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Bill.git'
+                    withSonarQubeEnv('sonar-25') {
+                        sh '''
+                            ls -al
+        
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/bill:/usr/src \
+                              -w /usr/src \
+                              divyapilla75/sonar-scanner-java17:latest \
+                              -Dsonar.projectKey=plsql-bill \
+                              -Dsonar.projectName=plsql-bill \
+                              -Dsonar.sources=database \
+                              -Dsonar.language=plsql \
+                              -Dsonar.host.url=${SONAR_HOST_URL} \
+                              -Dsonar.login=${SONAR_AUTH_TOKEN}
+                        '''
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-bill') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('common') {
+            steps {
+                dir('common') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_Common.git'
+        
+                    withSonarQubeEnv('sonar-25') {
+                        sh '''
+                            echo "Running SonarQube scan for kafkapublisher module..."
+        
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/common/web/service/kafkapublisher:/app \
+                              -w /app \
+                              maven:3.9.6-eclipse-temurin-17-alpine \
+                              /bin/sh -c "mkdir -p dummy-bin && mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                                -Dsonar.projectKey=java-common-kafkapublisher \
+                                -Dsonar.projectName=java-common-kafkapublisher \
+                                -Dsonar.sources=src/main/java \
+                                -Dsonar.java.binaries=dummy-bin \
+                                -Dsonar.token=${SONAR_AUTH_TOKEN} \
+                                -Dsonar.host.url=${SONAR_HOST_URL}"
+                        '''
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-common') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+        stage('changelogs') {
+            steps {
+                dir('changelogs') {
+                    git branch: 'master', credentialsId: 'Vault-RECVUE-GITHUB', poll: false, changelog: false, url: 'git@github.com:InfovityInc/RECVUE_DB_ChangeLog.git'
+        
+                    withSonarQubeEnv('sonar-25') {
+                        sh '''
+                            echo "Running SonarQube scan for DB changelogs without Maven..."
+        
+                            docker run --rm \
+                              -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                              -e SONAR_AUTH_TOKEN=${SONAR_AUTH_TOKEN} \
+                              -v ${WORKSPACE}/changelogs:/usr/src \
+                              -w /usr/src \
+                              divyapilla75/sonar-scanner-java17:latest \
+                              -Dsonar.projectKey=plsql-changelogs \
+                              -Dsonar.projectName=plsql-changelogs \
+                              -Dsonar.sources=. \
+                              -Dsonar.inclusions=**/*.sql \
+                              -Dsonar.language=plsql \
+                              -Dsonar.host.url=${SONAR_HOST_URL} \
+                              -Dsonar.login=${SONAR_AUTH_TOKEN}
+                        '''
+                    }
+                }
+            }
+        }
+        // stage('quality-gate-ms-changelogs') {
+        //     steps {
+        //             waitForQualityGate abortPipeline: true
+        //     }
+        // }
+    //     post {
+    //         cleanup {
+    //             cleanWs()
+    //         }
+    // }
+}
+}
