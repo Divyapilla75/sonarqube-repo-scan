@@ -1,0 +1,155 @@
+Build & Deployment process for QA Environment:
+
+qaimpl.recvue.com ==> only Build & Deployment is done
+
+qanext.recvue.com ==> Build, Changelogs & Deployment is done
+
+qaorion.recvue.com ==> Build, Changelogs & Deployment is done
+
+qairis.recvue.com ==> Build, Changelogs & Deployment is done
+
+integrationiris.recvue.com ==> Build, Changelogs & Deployment is done
+
+testauto.recvue.com ==> Build, Changelogs & Deployment is done
+
+perftest.recvue.com ==> Build, Changelogs & Deployment is done
+
+
+
+Build process
+-- get the tag from the URL
+-- add one number for the tag
+-- update the version.txt file under oci-jenkins folder over QA-Automation repo
+   TAG=Release_25.2.5.11
+   BRANCH=origin/R_25.2.5
+   CHANGELOG_BRANCH=origin/R_25.2.5
+   ENVIRONMENT=tmt
+   
+-- Only for qanext changes should be updated as mentioned below
+   TAG=Release_25.2.5.11
+   BRANCH=origin/master
+   CHANGELOG_BRANCH=origin/master
+   ENVIRONMENT=qanext
+   
+-- For qairis changes should be updated as mentioned below
+    Add commentMore actions
+	TAG=Release_25.3.0.126
+	BRANCH=origin/R_25.3
+	CHANGELOG_BRANCH=origin/master
+	ENVIRONMENT=qairis
+   
+Changelogs run
+-- click on build with parameters
+-- assign environament name
+-- click on build
+
+Post Build Check points:
+
+1. Check if all the pipelines under Build_All are successful or failed
+   (i) If one of the buid pipeline fail we don't preceed with deployment. We should mention about the error over OPS channel.
+   (ii) If the all the build pipeline are successful then run the changelogs job(except for qaimpl for all qa builds we should run changelog_running pipeline)
+   Changelogs run
+	-- click on build with parameters
+	-- assign environament name
+	-- click on build
+    (iii) check if change logs pipeline is successful or not. If it has failed copy the error and post it over OPS channel, If not go ahead with deployment process.
+
+   
+Deployment process
+-- update the below mentioned details over version.txt file under OCI-JENKINS-DEPLOY over QA-AUTOMATION repo
+   ENVIRONMENT=amcperf
+   TAG=Release_24.4.3.170
+   
+Post Deployment Check points:
+
+1. We have the Deploy_All pipeline if all the pipeline are successful or not.
+2.if there is any failure is observed copy the error and post it over OPS channel
+3. If all the pipeline ran successfuly check the pods in the particular namespace/environment. If the pods are running or not.
+4. If any pod fails to run check the logs and events and post the error over the OPS channel.
+5. Open the URL related to that environment and check if everything is working fine or not.
+6. for few URLs OPS team doesn't have access in that case ignore this check.
+
+
+   
+--------------------------------------------------------
+
+Spark build:
+
+-- Go to Jenkins CICD and open databricks job under Build-all
+-- Click on Build with parameters and update the below mentioned details
+   Tag: Release_24.3.1.2(get the current tag from the UI)
+   branch: origin/R_24.3.1
+-- Click on build
+
+Post build Check list:
+1. Check if the pipeline has run successfully
+2. if the pipeline failed then copy the error from the logs and post over OPS channel. Stop the deployment.
+
+
+Spark Deploy:
+
+-- Go to Jenkins CICD and open databricks job under deploy-all
+-- Click on Build with parameters and update the below mentioned details
+   Tag: Release_24.3.1.2(get the current tag from the UI)
+   Environment: (assign which ever environment this is related to)
+-- Click on deploy-all
+
+post deploymnet check list:
+1. There is not checklist as such.
+
+--------------------------------------------------------------------------------
+Deployment process for CustTest environment:
+
+There is no build activity done over CustTest. Hence we perform only changelogs & deploymnets
+
+For custtest deployment is requested over OPS channel via ticket. 
+Open the ticket and get the tag for deployment. follow the steps mentioned below.
+
+1. First check the comments over the ticket for approvals from Anand Moury, Mustaq, promod, Robin
+2. Any two approvals are required.
+3. Run changelogs_running job as mentioned below
+    
+For tags starting with 23 or 24 used Changelogs_Running job over Jenkins
+	Changelogs run
+	-- click on build with parameters
+	-- assign environament name
+	-- click on build
+	
+For tags starting with 25 use Changelogs_Running_New job over Jenkins CICD
+	Changelogs run
+	-- click on build with parameters
+	-- Assign tag that is mentioned in the ticket
+	-- assign environament name
+	-- click on build
+	
+4. Like wise run change changelogs_running_new job for all the namespaces that are running in custtest cluster. Go through the link mentioned below for reference
+https://recvue.atlassian.net/wiki/spaces/OPS/pages/1778188311/Current+Versions+of+Every+Instance
+5. Look out for comments if there is any exception and ignore that namespace while running changelogs_running job
+6. If we observe any errors in changelogs pipeline inform the respective team/team member about it over OPS channel.
+7. If there is no error go head with deploymnet.
+8. For deployment go to QA automation repo and open OCI-JENKINS-DEPLOY folder and open version.txt and give the detailes mentioned below for all the custtest NS
+   ENVIRONMENT=amcperf
+   TAG=Release_24.4.3.170
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

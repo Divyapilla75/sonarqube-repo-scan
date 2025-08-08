@@ -1,0 +1,35 @@
+
+Deployment process for CustTest environment:
+
+There is no build activity done over CustTest. Hence we perform only changelogs & deployments
+
+For custtest deployment is requested over OPS channel via ticket. 
+Open the ticket and get the tag for deployment. follow the steps mentioned below.
+
+1. First check the comments over the ticket for approvals from Anand Moury, Mustaq, promod, Robin
+2. Any two approvals are required.
+3. Run changelogs_running job as mentioned below
+    
+For tags starting with 23 or 24 used Changelogs_Running job over Jenkins
+	Changelogs run
+	-- click on build with parameters
+	-- assign environament name
+	-- click on build
+	
+For tags starting with 25 use Changelogs_Running_New job over Jenkins CICD
+	Changelogs run
+	-- click on build with parameters
+	-- Assign tag that is mentioned in the ticket
+	-- assign environament name
+	-- click on build
+	
+4. Like wise run change changelogs_running_new job for all the namespaces that are running in custtest cluster. Go through the link mentioned below for reference
+https://recvue.atlassian.net/wiki/spaces/OPS/pages/1778188311/Current+Versions+of+Every+Instance
+5. Look out for comments if there is any exception and ignore that namespace while running changelogs_running job
+6. If we observe any errors in changelogs pipeline inform the respective team/team member about it over OPS channel.
+7. If there is no error go head with deploymnet.
+8. For deployment go to QA automation repo and open OCI-JENKINS-DEPLOY folder and open version.txt and give the detailes mentioned below for all the custtest NS
+   ENVIRONMENT=amcperf
+   TAG=Release_24.4.3.170
+
+###Sometimes we also receive custest deploymnet tickets to deploy only to one or two environments###
